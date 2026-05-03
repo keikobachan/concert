@@ -587,13 +587,19 @@
         <div>
           <span class="ticket-name">小・中学生</span>
         </div>
-        <div class="ticket-price">¥1,000</div>
+        <div class="ticket-price">¥1,500</div>
       </li>
       <li class="ticket-item">
         <div>
           <span class="ticket-name">未就学児</span>
         </div>
         <div class="ticket-price" style="color:#3A6B4A;">無料</div>
+      </li>
+      <li class="ticket-item">
+        <div>
+          <span class="ticket-name">懇親会</span>
+        </div>
+        <div class="ticket-price">¥1,500</div>
       </li>
     </ul>
     <div style="font-size:12px; color:var(--text-muted); padding: 10px 0 0; line-height:1.7;">
@@ -636,7 +642,7 @@
           </div>
           <div class="ticket-row">
             <div class="ticket-row-name">小・中学生</div>
-            <div class="ticket-row-price">¥1,000</div>
+            <div class="ticket-row-price">¥1,500</div>
             <div class="qty-control">
               <button type="button" class="qty-btn" onclick="changeQty('student',-1)">−</button>
               <div class="qty-display" id="student-qty">0</div>
@@ -650,6 +656,15 @@
               <button type="button" class="qty-btn" onclick="changeQty('child',-1)">−</button>
               <div class="qty-display" id="child-qty">0</div>
               <button type="button" class="qty-btn" onclick="changeQty('child',1)">＋</button>
+            </div>
+          </div>
+          <div class="ticket-row">
+            <div class="ticket-row-name">懇親会</div>
+            <div class="ticket-row-price">¥1,500</div>
+            <div class="qty-control">
+              <button type="button" class="qty-btn" onclick="changeQty('party',-1)">−</button>
+              <div class="qty-display" id="party-qty">0</div>
+              <button type="button" class="qty-btn" onclick="changeQty('party',1)">＋</button>
             </div>
           </div>
         </div>
@@ -777,8 +792,8 @@
   setTimeout(() => document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible')), 100);
 
   // 枚数管理
-  const qty = { adult: 0, student: 0, child: 0, beer: 1 };
-  const prices = { adult: 2500, student: 1000, child: 0 };
+  const qty = { adult: 0, student: 0, child: 0, beer: 1, party: 0 };
+  const prices = { adult: 2500, student: 1500, child: 0 };
 
   function changeQty(type, delta) {
     const min = type === 'beer' ? 1 : 0;
@@ -805,7 +820,7 @@
     const beerQtyRow = document.getElementById('beerQtyRow');
     beerQtyRow.style.display = beerChecked ? 'block' : 'none';
 
-    const base = qty.adult * 2500 + qty.student * 1000;
+    const base = qty.adult * 2500 + qty.student * 1500 + qty.party * 1500;
     const beerExtra = beerChecked ? qty.beer * 300 : 0;
     const total = base + beerExtra;
     document.getElementById('totalAmount').textContent = '¥' + total.toLocaleString();
@@ -862,27 +877,18 @@
     const email = document.getElementById('email').value.trim();
     const notes = document.getElementById('notes').value.trim();
 
-    const totalAmt = qty.adult * 2500 + qty.student * 1000 + (beerChecked ? qty.beer * 300 : 0);
+    const totalAmt = qty.adult * 2500 + qty.student * 1500 + qty.party * 1500 + (beerChecked ? qty.beer * 300 : 0);
 
     const body = {
-      session,
-      name,
-      tel,
-      email,
-      adult: qty.adult,
-      student: qty.student,
-      child: qty.child,
-      beerOption: beerChecked ? `あり（${qty.beer}名）` : 'なし',
-      total: '¥' + totalAmt.toLocaleString(),
-      notes: notes || 'なし',
-      _subject: `【予約】いづみやコンサート11 - ${name} 様`,
-      _replyto: email,
-      _template: 'box'
+      access_key: '87b4f93f-5313-48d0-a254-fbf4256bcf98',
+      subject: `【予約】いづみやコンサート11 - ${name} 様`,
+      from_name: name,
+      replyto: email,
+      message: `公演回：${session}\nお名前：${name}\n電話番号：${tel}\nメール：${email}\n一般：${qty.adult}枚\n小中学生：${qty.student}枚\n未就学児：${qty.child}名\nビールオプション：${beerChecked ? 'あり（' + qty.beer + '名）' : 'なし'}\n懇親会：${qty.party}名\n合計目安：¥${totalAmt.toLocaleString()}\n備考：${notes || 'なし'}`
     };
 
     try {
-      // Formspreeへ送信 — REPLACE "YOUR_FORM_ID" with your actual Formspree form ID
-      const res = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+      const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(body)
@@ -895,7 +901,7 @@
         document.getElementById('confirmDetails').innerHTML =
           `<strong>公演：</strong>${session}<br>` +
           `<strong>お名前：</strong>${name} 様<br>` +
-          `<strong>一般：</strong>${qty.adult}枚　<strong>小中学生：</strong>${qty.student}枚　<strong>未就学児：</strong>${qty.child}名<br>` +
+          `<strong>一般：</strong>${qty.adult}枚　<strong>小中学生：</strong>${qty.student}枚　<strong>未就学児：</strong>${qty.child}名　<strong>懇親会：</strong>${qty.party}名<br>` +
           (beerChecked ? `<strong>ビールオプション：</strong>${qty.beer}名分<br>` : '') +
           `<strong>合計目安：</strong>¥${totalAmt.toLocaleString()}`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
