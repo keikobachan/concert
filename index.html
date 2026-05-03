@@ -179,6 +179,32 @@
     margin-top: 4px;
   }
 
+  .seats-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .seats-ok { background: #E8F5E9; color: #2E7D32; }
+  .seats-few { background: #FFF8E1; color: #F57F17; }
+  .seats-none { background: #FFEBEE; color: #C62828; }
+
+  .sold-out-banner {
+    background: #FFEBEE;
+    border: 1px solid #FFCDD2;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    color: #C62828;
+    font-weight: 500;
+    font-size: 14px;
+    margin-top: 16px;
+    display: none;
+  }
+
   .venue-info {
     display: flex;
     align-items: flex-start;
@@ -555,13 +581,13 @@
         <div class="session-label">第1回</div>
         <div class="session-time">13:00</div>
         <div class="session-detail">2026年6月6日（土）</div>
-        <div class="session-detail" id="seats1" style="margin-top:6px; font-size:12px; color:#7BA3C8;">定員30席</div>
+        <div id="seats-badge-1" class="seats-badge seats-ok">残席確認中...</div>
       </div>
       <div class="session-card">
         <div class="session-label">第2回</div>
         <div class="session-time">15:00</div>
         <div class="session-detail">2026年6月6日（土）</div>
-        <div class="session-detail" id="seats2" style="margin-top:6px; font-size:12px; color:#7BA3C8;">定員30席</div>
+        <div id="seats-badge-2" class="seats-badge seats-ok">残席確認中...</div>
       </div>
     </div>
     <div class="venue-info">
@@ -738,6 +764,10 @@
         • ご予約後、確認メールをお送りします
       </div>
 
+      <div class="sold-out-banner" id="soldOutBanner">
+        ご選択の回は満席となりました。キャンセル待ちはお電話にてお問い合わせください。
+      </div>
+
       <button type="submit" class="submit-btn" id="submitBtn">
         予約を申し込む
       </button>
@@ -826,9 +856,53 @@
     document.getElementById('totalAmount').textContent = '¥' + total.toLocaleString();
   }
 
-  function updateSeatsInfo() {
-    // 満席表示などをここで制御可能
+  // 残席データ（GitHubのseats.jsonから取得）
+  const seatsData = { 1: 30, 2: 30 };
+
+  async function loadSeats() {
+    try {
+      const res = await fetch('seats.json?t=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        seatsData[1] = data.session1;
+        seatsData[2] = data.session2;
+      }
+    } catch(e) {}
+    updateBadge(1);
+    updateBadge(2);
   }
+
+  function updateBadge(num) {
+    const badge = document.getElementById('seats-badge-' + num);
+    const s = seatsData[num];
+    if (s <= 0) {
+      badge.textContent = '満席';
+      badge.className = 'seats-badge seats-none';
+    } else if (s <= 5) {
+      badge.textContent = '残り' + s + '席';
+      badge.className = 'seats-badge seats-few';
+    } else {
+      badge.textContent = '残り' + s + '席';
+      badge.className = 'seats-badge seats-ok';
+    }
+  }
+
+  function updateSeatsInfo() {
+    const session = document.getElementById('session').value;
+    const banner = document.getElementById('soldOutBanner');
+    const btn = document.getElementById('submitBtn');
+    if (!session) { banner.style.display='none'; btn.style.display='block'; return; }
+    const num = session.includes('1回') ? 1 : 2;
+    if (seatsData[num] <= 0) {
+      banner.style.display = 'block';
+      btn.style.display = 'none';
+    } else {
+      banner.style.display = 'none';
+      btn.style.display = 'block';
+    }
+  }
+
+  loadSeats();
 
   // バリデーション
   function validate() {
