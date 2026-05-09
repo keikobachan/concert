@@ -953,7 +953,40 @@
 
     const totalAmt = qty.adult * 2500 + qty.student * 1500 + qty.party * 1500 + (beerChecked ? qty.beer * 300 : 0);
 
-    const body = {
+const GOOGLE_SHEETS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx7uDv4_dMKC3rWi44QcTgHgZiOlJYOobBwWuDoZlT_q862c0ZXip90CQflyDL2GGmOyg/exec';
+
+function sessionToTimeLabel(sessionText) {
+  if (!sessionText) return '';
+  if (sessionText.includes('13')) return '13時';
+  if (sessionText.includes('15')) return '15時';
+  if (sessionText.includes('1回')) return '13時';
+  if (sessionText.includes('2回')) return '15時';
+  return sessionText;
+}
+
+async function sendToGoogleSheets() {
+  if (!GOOGLE_SHEETS_WEBAPP_URL) return;
+
+  const payload = {
+    name,
+    time: sessionToTimeLabel(session),
+    adult: qty.adult,
+    student: qty.student,
+    child: qty.child,
+    beerChange: beerChecked ? qty.beer : 0,
+    party: qty.party,
+    tel,
+    email,
+    notes
+  };
+
+  await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+}const body = {
       access_key: '87b4f93f-5313-48d0-a254-fbf4256bcf98',
       subject: `【予約】いづみやコンサート11 - ${name} 様`,
       from_name: name,
@@ -962,7 +995,8 @@
     };
 
     try {
-      const res = await fetch('https://api.web3forms.com/submit', {
+      sendToGoogleSheets().catch(() => {});
+const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(body)
