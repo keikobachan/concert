@@ -859,18 +859,33 @@
   // 残席データ（GitHubのseats.jsonから取得）
   const seatsData = { 1: 30, 2: 30 };
 
-  async function loadSeats() {
-    try {
-      const res = await fetch('seats.json?t=' + Date.now());
-      if (res.ok) {
-        const data = await res.json();
-        seatsData[1] = data.session1;
-        seatsData[2] = data.session2;
-      }
-    } catch(e) {}
-    updateBadge(1);
-    updateBadge(2);
+ async function loadSeats() {
+  const SEATS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx7uDv4_dMKC3rWi44QcTgHgZiOlJYOobBwWuDoZlT_q862c0ZXip90CQflyDL2GGmOyg/exec';
+  function jsonp(url) {
+    return new Promise((resolve, reject) => {
+      const cb = '__seats_cb_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      const cleanup = () => {
+        try { delete window[cb]; } catch (e) {}
+        script.remove();
+      };
+      window[cb] = (data) => { cleanup(); resolve(data); };
+      script.onerror = () => { cleanup(); reject(new Error('jsonp failed')); };
+      script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb + '&t=' + Date.now();
+      document.head.appendChild(script);
+    });
   }
+  try {
+    const data = await jsonp(SEATS_WEBAPP_URL);
+    if (data && data.ok) {
+      seatsData[1] = Number(data.session1 ?? seatsData[1]);
+      seatsData[2] = Number(data.session2 ?? seatsData[2]);
+    }
+  } catch (e) {}
+  updateBadge(1);
+  updateBadge(2);
+}
+
 
   function updateBadge(num) {
     const badge = document.getElementById('seats-badge-' + num);
